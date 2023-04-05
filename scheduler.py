@@ -1,10 +1,14 @@
 import datetime
+import re
 import subprocess
 from sys import argv
 from time import sleep
 
 import pyautogui
 import pynput
+
+PROJECT_DIRECTORY = "/home/jibon/website/mymoviebazar.net"
+WORKING_BRANCH = "development"
 
 
 def print_help():
@@ -81,13 +85,35 @@ def send_message(url, message, is_dev=True):
 
 def deploy_branch():
     if not is_dev:
-        subprocess.run(f"cd /home/jibon/website/mymoviebazar.net && "
-                       f"git checkout development && "
-                       f"git merge {branch} -m 'merged {branch} with development' && "
+        # check for uncommitted and untracked work
+        git_status = subprocess.run(f"cd {PROJECT_DIRECTORY} && "
+                                    f"git status", shell=True, capture_output=True).stdout
+        git_status = git_status.decode()
+        has_uncommitted_file = re.search("Changes to be committed:", git_status)
+        has_unstated_file = re.search("Changes not staged for commit:", git_status)
+        temp_branch = "temp-test-test-temp"
+        if has_uncommitted_file or has_unstated_file:
+            # temporarily save files to temp branch
+            subprocess.run(f"cd {PROJECT_DIRECTORY} && "
+                           f"git branch {temp_branch} && "
+                           f"git checkout {temp_branch} && "
+                           f"git add -A && "
+                           f"git commit -m 'update' && "
+                           f"git checkout {WORKING_BRANCH}", shell=True)
+        subprocess.run(f"cd {PROJECT_DIRECTORY} && "
+                       f"git checkout {WORKING_BRANCH} && "
+                       f"git merge {branch} -m 'merged {branch} with {WORKING_BRANCH}' && "
                        f"git push && "
                        f"git branch {branch} -D && "
                        f"./deploy.sh",
                        shell=True)
+        if has_uncommitted_file or has_unstated_file:
+            # restore to previous
+            subprocess.run(f"cd {PROJECT_DIRECTORY} && "
+                           f"git checkout {temp_branch} && "
+                           f"git reset HEAD~ && "
+                           f"git checkout {WORKING_BRANCH} && "
+                           f"git branch {temp_branch} -D", shell=True)
 
 
 _help = False
