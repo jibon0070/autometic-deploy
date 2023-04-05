@@ -94,6 +94,7 @@ month = False
 day = False
 hour = False
 minute = False
+profile = False
 
 try:
     argv.index("-h")
@@ -134,6 +135,15 @@ try:
     message = argv[index + 1]
 except:
     message = False
+try:
+    index = argv.index("-p")
+    profile = argv[index + 1]
+except:
+    profile = False
+
+if not profile:
+    print_help()
+    exit()
 if date:
     try:
         date = datetime.datetime.strptime(date, "%Y-%m-%d %I:%M %p")
@@ -149,15 +159,18 @@ if branch or (url and message):
     while True:
         current_date = datetime.datetime.now()
         if current_date >= date:
-            # subprocess.run("notify-send -u critical 'a' 'a'", shell=True)
+            subprocess.run(f"notify-send -u critical 'Automatic Deploy' 'About to deploy {branch} branch. Do not "
+                           f"interrupt, do not touch keyboard or mouse.'", shell=True)
             if branch and not is_dev:
                 deploy_branch()
             else:
                 print("no branch found, not deploying")
             if url and message:
-                send_message(url, message, is_dev)
+                send_message(url, message, profile, is_dev)
             else:
                 print("no messenger url or message found, not sending update message")
+            subprocess.run(f"notify-send -u critical 'Automatic Deploy' 'Deployment finished, you may continue.'",
+                           shell=True)
             break
         print(
             f"{branch + ', ' if branch else ''}"
