@@ -16,64 +16,31 @@ def print_help():
 -b [branch name]
 -u [messenger url]
 -m [message]
+-p [profile directory]
 -h [help]
 --dev for development environment [optional]""")
 
 
-def send_message(url, message, is_dev=True):
-    pyautogui.press("pause")
-    sleep(.5)
+def send_message(url: str, message: str, profile: str, is_dev: bool = True):
     # open browser
-    pyautogui.press("win")
-    sleep(0.5)
-    pyautogui.write("edge")
+    profile = profile.replace(' ', '\\ ')
+    subprocess.run(
+        f"/usr/bin/microsoft-edge-stable --flag-switches-begin --flag-switches-end --profile-directory={profile}",
+        shell=True)
     sleep(.5)
-    pyautogui.press("enter")
-    sleep(3)
-
-    # open incognito mode
-    pyautogui.hotkey("ctrl", "shift", "n")
-    sleep(.5)
-
-    # type url
-    pyautogui.write("https://www.facebook.com")
-    pyautogui.press("enter")
-    sleep(3)
-
-    # login
-    # type email
-    pyautogui.write("atikurrahaman386@gmail.com")
-    sleep(.5)
-    # select password
-    pyautogui.press("tab")
-    sleep(.5)
-    # type password
-    pyautogui.write("Labonno#007")
-    sleep(.5)
-    pyautogui.press("enter")
-    sleep(5)
 
     # goto messenger url
-    pyautogui.hotkey("alt", "d")
     pyautogui.write(url)
     pyautogui.press("enter")
-    sleep(5)
+    sleep(30)
 
-    # select message box
-    pyautogui.press("f6")
-    sleep(.1)
-    # 27 shift tab
-    for i in range(27):
-        pyautogui.hotkey("shift", "tab")
-        # sleep(.1)
-    # change to avro bangla
+    # # change to avro bangla
     pyautogui.hotkey("win", "space")
-    # write message
+    # # write message
     pyautogui.write(message)
     sleep(.1)
 
     # send message
-    pyautogui.press("tab")
     if not is_dev:
         pyautogui.press("enter")
         sleep(5)
