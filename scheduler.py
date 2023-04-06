@@ -7,197 +7,243 @@ from time import sleep
 import pyautogui
 import pynput
 
-PROJECT_DIRECTORY = "~/website/media-online-billing"
-WORKING_BRANCH = "main"
 
+class AutomaticDeploy:
+    one_min_alert = False
+    send_notf_at = 60
 
-def print_help():
-    print("""-d [yyyy-mm-dd hh:mm AM/PM]
+    def __init__(self):
+        arguments = self.get_arguments()
+        self.is_dev = arguments['is_dev']
+        self.branch = arguments['branch']
+        if not arguments['working_directory'] or not arguments['working_branch']:
+            self.print_help()
+            return
+        self.working_directory = arguments['working_directory']
+        self.working_branch = arguments['working_branch']
+
+        if arguments['help']:
+            self.print_help()
+            return
+
+        if not arguments['profile_directory']:
+            self.print_help()
+            return
+
+        date = self.date(arguments['date'])
+
+        if (arguments['branch'] and arguments['working_directory'] and arguments['working_branch']) or (
+                arguments['url'] and arguments['message']):
+            self.one_min_alert = (date - datetime.datetime.now()).seconds <= self.send_notf_at
+            while True:
+                current_date = datetime.datetime.now()
+                if current_date >= date:
+                    subprocess.run(
+                        f"notify-send -u critical 'Automatic Deploy' 'About to deploy {arguments['branch']} branch. "
+                        f"Do not interrupt, do not touch keyboard or mouse.'", shell=True)
+                    if arguments['branch'] and not self.is_dev:
+                        self.deploy_branch()
+                    else:
+                        print("no branch found, not deploying")
+                    if arguments['url'] and arguments['message']:
+                        self.send_message(arguments['url'], arguments['message'], arguments['profile_directory'],
+                                          self.is_dev)
+                    else:
+                        print("no messenger url or message found, not sending update message")
+                    subprocess.run(
+                        f"notify-send -u critical 'Automatic Deploy' 'Deployment finished, you may continue.'",
+                        shell=True)
+                    break
+                remaining = date - current_date
+                if remaining.seconds <= self.send_notf_at and not self.one_min_alert:
+                    subprocess.run(f"notify-send -u critical "
+                                   f"'Automatic Deploy' "
+                                   f"'About to deploy in 1 minute. Premare to stay still.'", shell=True)
+                    self.one_min_alert = True
+                print(
+                    f"{arguments['branch'] + ', ' if arguments['branch'] else ''}"
+                    f"current time: {current_date.strftime('%Y-%m-%d %I:%M:%S %p')}, "
+                    f"scheduled time: {date.strftime('%Y-%m-%d %I:%M %p')}, {remaining} left"
+                )
+                sleep(1)
+        else:
+            self.print_help()
+
+        if self.is_dev:
+            self.pressed_esc = False
+
+            def on_press(key):
+                if key == pynput.keyboard.Key.esc:
+                    self.pressed_esc = True
+
+            listener = pynput.keyboard.Listener(on_press=on_press)
+            listener.start()
+
+            run = True
+            while run:
+                print(pyautogui.position())
+                if self.pressed_esc:
+                    break
+            # close browser
+            pyautogui.hotkey("ctrl", "w")
+
+    @staticmethod
+    def print_help():
+        print("""-d [yyyy-mm-dd hh:mm AM/PM]
 -b [branch name]
 -u [messenger url]
 -m [message]
 -p [profile directory]
+-wd [working directory]
+-wb [working branch]
 -h [help]
 --dev for development environment [optional]""")
 
+    @staticmethod
+    def get_arguments():
+        date = False
+        branch = False
+        url = False
+        message = False
+        profile_directory = False
+        _help = False
+        is_dev = False
+        working_directory = False
+        working_branch = False
 
-def send_message(url: str, message: str, profile: str, is_dev: bool = True):
-    # open browser
-    profile = profile.replace(' ', '\\ ')
-    subprocess.run(
-        f"/usr/bin/microsoft-edge-stable --flag-switches-begin --flag-switches-end --profile-directory={profile}",
-        shell=True)
-    sleep(.5)
+        try:
+            argv.index("-h")
+            _help = True
+        except:
+            _help = False
 
-    # goto messenger url
-    pyautogui.write(url)
-    pyautogui.press("enter")
-    sleep(30)
+        try:
+            index = argv.index("-d")
+            date = argv[index + 1]
+        except:
+            date = False
 
-    # # change to avro bangla
-    pyautogui.hotkey("win", "space")
-    # # write message
-    pyautogui.write(message)
-    sleep(.1)
+        try:
+            index = argv.index("-b")
+            branch = argv[index + 1]
+        except:
+            branch = False
 
-    # send message
-    if not is_dev:
+        try:
+            argv.index("--dev")
+            is_dev = True
+        except:
+            is_dev = False
+
+        try:
+            index = argv.index("-u")
+            url = argv[index + 1]
+        except:
+            url = False
+
+        try:
+            index = argv.index("-m")
+            message = argv[index + 1]
+        except:
+            message = False
+
+        try:
+            index = argv.index("-p")
+            profile_directory = argv[index + 1]
+        except:
+            profile_directory = False
+
+        try:
+            index = argv.index("-wd")
+            working_directory = argv[index + 1]
+        except:
+            working_directory = False
+
+        try:
+            index = argv.index('-wb')
+            working_branch = argv[index + 1]
+        except:
+            working_branch = False
+
+        return {"date": date, "branch": branch, "url": url, "message": message, "profile_directory": profile_directory,
+                "help": _help, "is_dev": is_dev, "working_directory": working_directory,
+                "working_branch": working_branch}
+
+    @staticmethod
+    def send_message(url: str, message: str, profile_directory: str, is_dev: bool = True):
+        # open browser
+        profile_directory = profile_directory.replace(' ', '\\ ')
+        subprocess.run(
+            f"/usr/bin/microsoft-edge-stable --flag-switches-begin --flag-switches-end "
+            f"--profile-directory={profile_directory}",
+            shell=True)
+        sleep(.5)
+
+        # goto messenger url
+        pyautogui.write(url)
         pyautogui.press("enter")
-        sleep(5)
+        sleep(30)
 
-    # close browser
-    if not is_dev:
-        pyautogui.hotkey("ctrl", "w")
+        # # change to avro bangla
+        pyautogui.hotkey("win", "space")
+        # # write message
+        pyautogui.write(message, interval=.25)
+        sleep(.1)
 
+        # send message
+        if not is_dev:
+            pyautogui.press("enter")
+            sleep(5)
 
-def deploy_branch():
-    if not is_dev:
-        # check for uncommitted and untracked work
-        git_status = subprocess.run(f"cd {PROJECT_DIRECTORY} && "
-                                    f"git status", shell=True, capture_output=True).stdout
-        git_status = git_status.decode()
-        has_uncommitted_file = re.search("Changes to be committed:", git_status)
-        has_unstated_file = re.search("Changes not staged for commit:", git_status)
-        temp_branch = "temp-test-test-temp"
-        if has_uncommitted_file or has_unstated_file:
-            # temporarily save files to temp branch
-            subprocess.run(f"cd {PROJECT_DIRECTORY} && "
-                           f"git branch {temp_branch} && "
-                           f"git checkout {temp_branch} && "
-                           f"git add -A && "
-                           f"git commit -m 'update' && "
-                           f"git checkout {WORKING_BRANCH}", shell=True)
-        subprocess.run(f"cd {PROJECT_DIRECTORY} && "
-                       f"git checkout {WORKING_BRANCH} && "
-                       f"git merge {branch} -m 'merged {branch} with {WORKING_BRANCH}' && "
-                       f"git push && "
-                       f"git branch {branch} -D && "
-                       f"./deploy.sh",
-                       shell=True)
-        if has_uncommitted_file or has_unstated_file:
-            # restore to previous
-            subprocess.run(f"cd {PROJECT_DIRECTORY} && "
-                           f"git checkout {temp_branch} && "
-                           f"git reset HEAD~ && "
-                           f"git checkout {WORKING_BRANCH} && "
-                           f"git branch {temp_branch} -D", shell=True)
+        # close browser
+        if not is_dev:
+            pyautogui.hotkey("ctrl", "w")
 
-
-_help = False
-date = False
-branch = False
-is_dev = False
-url = False
-message = False
-year = False
-month = False
-day = False
-hour = False
-minute = False
-profile = False
-
-try:
-    argv.index("-h")
-    _help = True
-except ValueError:
-    _help = False
-
-if _help:
-    print_help()
-    exit()
-
-try:
-    index = argv.index("-d")
-    date = argv[index + 1]
-except:
-    date = False
-
-try:
-    index = argv.index("-b")
-    branch = argv[index + 1]
-except:
-    branch = False
-
-try:
-    argv.index("--dev")
-    is_dev = True
-except:
-    is_dev = False
-
-try:
-    index = argv.index("-u")
-    url = argv[index + 1]
-except:
-    url = False
-
-try:
-    index = argv.index("-m")
-    message = argv[index + 1]
-except:
-    message = False
-try:
-    index = argv.index("-p")
-    profile = argv[index + 1]
-except:
-    profile = False
-
-if not profile:
-    print_help()
-    exit()
-if date:
-    try:
-        date = datetime.datetime.strptime(date, "%Y-%m-%d %I:%M %p")
-    except Exception as e:
-        print(e)
-        pass
-    if type(date) is not datetime.datetime:
-        date = datetime.datetime.now()
-else:
-    date = datetime.datetime.now()
-
-if branch or (url and message):
-    while True:
-        current_date = datetime.datetime.now()
-        if current_date >= date:
-            subprocess.run(f"notify-send -u critical 'Automatic Deploy' 'About to deploy {branch} branch. Do not "
-                           f"interrupt, do not touch keyboard or mouse.'", shell=True)
-            if branch and not is_dev:
-                deploy_branch()
-            else:
-                print("no branch found, not deploying")
-            if url and message:
-                send_message(url, message, profile, is_dev)
-            else:
-                print("no messenger url or message found, not sending update message")
-            subprocess.run(f"notify-send -u critical 'Automatic Deploy' 'Deployment finished, you may continue.'",
+    def deploy_branch(self):
+        if not self.is_dev:
+            # check for uncommitted and untracked work
+            git_status = subprocess.run(f"cd {self.working_directory} && "
+                                        f"git status", shell=True, capture_output=True).stdout
+            git_status = git_status.decode()
+            has_uncommitted_file = re.search("Changes to be committed:", git_status)
+            has_unstated_file = re.search("Changes not staged for commit:", git_status)
+            temp_branch = "temp-test-test-temp"
+            if has_uncommitted_file or has_unstated_file:
+                # temporarily save files to temp branch
+                subprocess.run(f"cd {self.working_directory} && "
+                               f"git branch {temp_branch} && "
+                               f"git checkout {temp_branch} && "
+                               f"git add -A && "
+                               f"git commit -m 'update' && "
+                               f"git checkout {self.working_branch}", shell=True)
+            subprocess.run(f"cd {self.working_directory} && "
+                           f"git checkout {self.working_branch} && "
+                           f"git merge {self.branch} -m 'merged {self.branch} with {self.working_branch}' && "
+                           f"git push && "
+                           f"git branch {self.branch} -D && "
+                           f"./deploy.sh",
                            shell=True)
-            break
-        print(
-            f"{branch + ', ' if branch else ''}"
-            f"current time: {current_date.strftime('%Y-%m-%d %I:%M:%S %p')}, "
-            f"scheduled time: {date.strftime('%Y-%m-%d %I:%M %p')}, {date - current_date} left"
-        )
-        sleep(1)
-else:
-    print_help()
+            if has_uncommitted_file or has_unstated_file:
+                # restore to previous
+                subprocess.run(f"cd {self.working_directory} && "
+                               f"git checkout {temp_branch} && "
+                               f"git reset HEAD~ && "
+                               f"git checkout {self.working_branch} && "
+                               f"git branch {temp_branch} -D", shell=True)
 
-if is_dev:
-    pressed_esc = False
+    @staticmethod
+    def date(date: str) -> datetime.datetime:
+        if date:
+            try:
+                date = datetime.datetime.strptime(date, "%Y-%m-%d %I:%M %p")
+            except Exception as e:
+                print(e)
+                pass
+            if type(date) is not datetime.datetime:
+                date = datetime.datetime.now()
+        else:
+            date = datetime.datetime.now()
+        return date
 
 
-    def on_press(key):
-        global pressed_esc
-        if key == pynput.keyboard.Key.esc:
-            pressed_esc = True
-
-
-    listener = pynput.keyboard.Listener(on_press=on_press)
-    listener.start()
-
-    run = True
-    while run:
-        print(pyautogui.position())
-        if pressed_esc:
-            break
-    # close browser
-    pyautogui.hotkey("ctrl", "w")
+AutomaticDeploy()
