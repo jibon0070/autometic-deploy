@@ -7,8 +7,8 @@ from time import sleep
 import pyautogui
 import pynput
 
-PROJECT_DIRECTORY = "/home/jibon/website/mymoviebazar.net"
-WORKING_BRANCH = "development"
+PROJECT_DIRECTORY = "~/website/media-online-billing"
+WORKING_BRANCH = "main"
 
 
 def print_help():
