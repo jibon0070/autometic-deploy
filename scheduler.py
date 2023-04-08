@@ -191,10 +191,14 @@ class AutomaticDeploy:
         pyautogui.press("enter")
         sleep(30)
 
-        # # change to avro bangla
-        pyautogui.hotkey("win", "space")
         # # write message
-        pyautogui.write(message, interval=.25)
+        for m in message.split("<cl>"):
+            pyautogui.write(m, interval=.25)
+            pyautogui.press("space")
+            sleep(.1)
+            pyautogui.hotkey("win", "space")
+            sleep(.1)
+            pyautogui.press("backspace")
         sleep(.1)
 
         # send message
