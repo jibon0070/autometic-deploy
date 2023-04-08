@@ -1,0 +1,2 @@
+cd /home/jibon/python/autometic-deploy
+python scheduler.py --dev "2023-04-08 03:16 PM" -b "series-watch-fb-like" -u "https://www.facebook.com/messages/t/5020246434759915/" -m "series <cl>e <cl> fb like and share add <cl>kore diyechi." -p "Profile 2" -wd "~/website/mymoviebazar.net" -wb "main"
