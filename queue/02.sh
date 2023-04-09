@@ -1,2 +1,0 @@
-cd /home/jibon/python/autometic-deploy
-python scheduler.py -d "2023-04-08 05:28 PM" -b "series-link-issue" -u "https://www.facebook.com/messages/t/5020246434759915/" -m "series <cl>er <cl> link issue <cl>Thik kore diyechi. ekhon <cl>series <cl> e <cl> click <cl> korole <cl>series open <cl>hobe." -p "Profile 2" -wd "~/website/mymoviebazar.net" -wb "main"
