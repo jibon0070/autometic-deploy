@@ -171,22 +171,15 @@ class AutomaticDeploy:
 
     @staticmethod
     def send_message(url: str, message: str, profile_directory: str, is_dev: bool = True):
-        # open browser
-        sleep(.5)
-        pyautogui.press("win")
-        sleep(.5)
-        pyautogui.write("edge")
-        sleep(.5)
-        pyautogui.press("enter")
-        sleep(5)
+
         profile_directory = profile_directory.replace(' ', '\\ ')
         subprocess.run(
-            f"/usr/bin/microsoft-edge-stable --flag-switches-begin --flag-switches-end "
-            f"--profile-directory={profile_directory}",
+            f"/usr/bin/microsoft-edge-stable --profile-directory={profile_directory} &",
             shell=True)
-        sleep(.5)
+        sleep(5)
 
         # goto messenger url
+        pyautogui.hotkey("alt", "d")
         pyautogui.write(url)
         pyautogui.press("enter")
         sleep(30)
