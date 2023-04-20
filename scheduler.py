@@ -36,6 +36,7 @@ class AutomaticDeploy:
                 arguments['url'] and arguments['message']):
             self.one_min_alert = (date - datetime.datetime.now()).seconds <= self.send_notf_at
             while True:
+                subprocess.run("clear", shell=True)
                 current_date = datetime.datetime.now()
                 if current_date >= date:
                     subprocess.run(
