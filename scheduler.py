@@ -62,7 +62,7 @@ class AutomaticDeploy:
                     self.one_min_alert = True
                 print(
                     f"{arguments['branch'] + ', ' if arguments['branch'] else ''}\n"
-                    f"current time: {current_date.strftime('%Y-%m-%d %I:%M:%S %p')}, "
+                    f"current time: {current_date.strftime('%Y-%m-%d %I:%M:%S %p')}\n"
                     f"scheduled time: {date.strftime('%Y-%m-%d %I:%M %p')}, {remaining} left"
                 )
                 sleep(1)
