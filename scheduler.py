@@ -230,7 +230,7 @@ class AutomaticDeploy:
                            f"git checkout {self.working_branch} && "
                            f"git merge {self.branch} -m 'merged {self.branch} with {self.working_branch}' && "
                            f"git push && "
-                           f"git push origin :{self.working_branch} && "
+                           f"git push origin :{self.branch} && "
                            f"git branch {self.branch} -D && "
                            f"./deploy.sh",
                            shell=True)
