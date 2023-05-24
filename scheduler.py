@@ -223,7 +223,6 @@ class AutomaticDeploy:
                                f"git commit -m 'update' && "
                                f"git checkout {self.working_branch}", shell=True)
             subprocess.run(f"cd {self.working_directory} && "
-                           f"git pull && "
                            f"git checkout {self.working_branch} && "
                            f"git pull && "
                            f"git checkout {self.branch} && "
@@ -231,6 +230,7 @@ class AutomaticDeploy:
                            f"git checkout {self.working_branch} && "
                            f"git merge {self.branch} -m 'merged {self.branch} with {self.working_branch}' && "
                            f"git push && "
+                           f"git push origin :{self.working_branch} && "
                            f"git branch {self.branch} -D && "
                            f"./deploy.sh",
                            shell=True)
